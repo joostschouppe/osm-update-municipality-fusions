@@ -428,19 +428,23 @@ maproulette_items <- processed_items_df %>%
       
       # Create queries for each part of oude_straatnamen
       queries <- sapply(oude_names, function(oude_name) {
+        oude_name <- str_trim(oude_name)
         paste0(
-          "[out:json][timeout:60];(",
-          "way[\"old_name\"=\"", str_trim(oude_name), "\"](", ymin, ",", xmin, ",", ymax, ",", xmax, ");",
-          "way[\"name\"=\"", nieuw_straatnaam, "\"](", ymin, ",", xmin, ",", ymax, ",", xmax, ");",
-          ");out body;>;out skel qt;"
+          "way[\"name\"=\"", oude_name, "\"](", ymin, ",", xmin, ",", ymax, ",", xmax, ");",
+          "way[\"name:right\"=\"", oude_name, "\"](", ymin, ",", xmin, ",", ymax, ",", xmax, ");",
+          "way[\"name:left\"=\"", oude_name, "\"](", ymin, ",", xmin, ",", ymax, ",", xmax, ");",
+          "nwr[\"addr:street\"=\"", oude_name, "\"](", ymin, ",", xmin, ",", ymax, ",", xmax, ");"
         )
       })
       
       # Combine all queries into a single string
-      paste(queries, collapse = " ")
+      paste0("[out:json][timeout:60];(", paste(queries, collapse = " "), ");out body;>;out skel qt;")
     }
   ) %>%
   ungroup()
+
+
+
 
 # filter only columns we need
 # keep all cases where an old street name still exists
@@ -478,6 +482,3 @@ maproulette_items <- maproulette_items %>%
 # save to maproulette
 ## save as geojson
 st_write(maproulette_items, paste0(local_folder,format(Sys.time(), "%Y%m%d_%H%M%S"),"_maproulette_items.geojson"))
-
-
-
