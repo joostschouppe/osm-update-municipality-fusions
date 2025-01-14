@@ -336,8 +336,7 @@ for (straat_id in unique(wegenregister_extended$nieuw_straatid)) {
     filter(nieuw_straatid == straat_id)
   plot(loop_item$geom)
   query_item<-loop_item
-  # Transform to 4326
-  loop_item$geom <- st_transform(loop_item$geom, 4326)
+  
   
   # Summarize and group by nieuw_straatid, and aggregate geometries
   loop_item <- loop_item %>%
@@ -347,12 +346,19 @@ for (straat_id in unique(wegenregister_extended$nieuw_straatid)) {
   # Add bbox geometry & make the bbox larger (buffer 200m)
   loop_item <- loop_item %>%
     mutate(
-      bbox = list(st_bbox(st_buffer(geometry, 200)) %>% as.list())
-    )
+      bbox = list(st_bbox(st_transform(st_buffer(geometry, 200),4326))) %>% as.list()
+      )
+    
+  
+  # Transform to 4326
+  loop_item$geom <- st_transform(loop_item$geometry, 4326)
   
   # Combine nieuw_straatnaam and oud_straatnaam, then get unique values
-  query_string <- unique(c(query_item$nieuw_straatnaam, query_item$oud_straatnaam))
-  
+  query_string <- unique(c(
+    query_item$nieuw_straatnaam,
+    unlist(str_split(query_item$oud_straatnaam, ", "))
+  ))
+
   # Create the PostgreSQL query string
   query_string0 <- paste0("name='", query_string, "'", collapse=" OR ")
   query_string1 <- paste0("tags->'addr:street'='", query_string, "'", collapse=" OR ")
@@ -424,7 +430,7 @@ maproulette_items <- processed_items_df %>%
   mutate(
     overpass = {
       # Split oude_straatnamen by comma
-      oude_names <- str_split(oude_straatnamen, ",")[[1]]
+      oude_names <- str_split(oude_straatnamen, ", ")[[1]]
       
       # Create queries for each part of oude_straatnamen
       queries <- sapply(oude_names, function(oude_name) {
