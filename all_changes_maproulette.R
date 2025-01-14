@@ -351,7 +351,7 @@ for (straat_id in unique(wegenregister_extended$nieuw_straatid)) {
     
   
   # Transform to 4326
-  loop_item$geom <- st_transform(loop_item$geometry, 4326)
+  loop_item$geometry <- st_transform(loop_item$geometry, 4326)
   
   # Combine nieuw_straatnaam and oud_straatnaam, then get unique values
   query_string <- unique(c(
@@ -448,6 +448,8 @@ maproulette_items <- processed_items_df %>%
     }
   ) %>%
   ungroup()
+
+
 
 
 
